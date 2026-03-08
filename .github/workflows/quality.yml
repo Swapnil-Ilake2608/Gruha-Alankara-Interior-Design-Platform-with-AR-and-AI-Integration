@@ -1,0 +1,46 @@
+name: Gruha Alankara Quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install backend deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run milestone validator
+        env:
+          AI_PROVIDER: local
+        run: python scripts/validate_milestones.py
+      - name: Run smoke tests
+        env:
+          AI_PROVIDER: local
+        run: pytest tests/test_smoke_api.py -q
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend deps
+        run: npm ci
+      - name: Build frontend
+        run: npm run build
